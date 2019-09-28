@@ -1,10 +1,13 @@
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;; Implementation of a parser for X Window dump files.
+;;;; Usage: (lisp-binary:read-binary 'cl-xwd:xwd-format stream)
 (defpackage :cl-xwd
   (:use :common-lisp)
   (:documentation "A XWD parser for Common Lisp"))
 
 (in-package :cl-xwd)
 
-(export '(xwd-from-shared-memory-id))
+(export '(xwd-format xwd-from-shared-memory-id))
 
 (lisp-binary:defbinary xwd-color-map-entry (:byte-order :big-endian)
   (entry-number 0 :type (unsigned-byte 32))
@@ -40,21 +43,12 @@
   (window-x 0 :type (signed-byte 32))
   (window-y 0 :type (signed-byte 32))
   (window-border-width 0 :type (unsigned-byte 32))
-  (creator "" :type 
-           (lisp-binary:terminated-string 1 :terminator 0 :external-format :utf8))
-  (color-map #()
-             :type
-             (simple-array
-              xwd-color-map-entry
-              (color-map-entries))))
-
-(defun test-xwd (&key (in-filename #p"~/out.raw"))
-  (lisp-binary:with-open-binary-file 
-      (in-raw in-filename :direction :input)
-    (lisp-binary:read-binary 'xwd-format in-raw)))
+  (creator "" :type (lisp-binary:terminated-string 1 :terminator 0 :external-format :utf8))
+  (color-map #() :type (simple-array xwd-color-map-entry (color-map-entries))))
 
 (defun xwd-from-shared-memory-id (shared-memory-id)
+  "Reads an XWD file that is stored in shared memory identified by shared-memory-id. \
+Intended to be used with `Xvfb -shmem'."
   (lisp-binary:read-binary 'xwd-format
                            (cl-shm:shared-memory-pointer->stream
-                            (cl-shm:attach-shared-memory-pointer
-                             shared-memory-id))))
+                            (cl-shm:attach-shared-memory-pointer shared-memory-id))))
