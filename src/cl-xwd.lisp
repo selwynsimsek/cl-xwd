@@ -7,7 +7,7 @@
 
 (in-package :cl-xwd)
 
-(export '(xwd-format xwd-from-shared-memory-id))
+(export '(xwd-format xwd-from-shared-memory-id shared-memory-raw-pointer))
 
 (lisp-binary:defbinary xwd-color-map-entry (:byte-order :big-endian)
   (entry-number 0 :type (unsigned-byte 32))
@@ -52,3 +52,8 @@ Intended to be used with `Xvfb -shmem'."
   (lisp-binary:read-binary 'xwd-format
                            (cl-shm:shared-memory-pointer->stream
                             (cl-shm:attach-shared-memory-pointer shared-memory-id))))
+
+(defun shared-memory-raw-pointer (shared-memory-id)
+  (cffi:inc-pointer (cl-shm:attach-shared-memory-pointer shared-memory-id)
+                    (+ (slot-value (xwd-from-shared-memory-id shared-memory-id) 'header-size)
+                       (* 12 (length (slot-value (xwd-from-shared-memory-id shared-memory-id) 'color-map))))))
